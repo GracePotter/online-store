@@ -1,6 +1,5 @@
 //Assignment 04	- Back End Development
 //http://localhost:9000/
-//Reference: Maynooth Moodle
 //Work in IE, Chrome and firefox, work in Windows OS.
 
 var http = require("http"); 
