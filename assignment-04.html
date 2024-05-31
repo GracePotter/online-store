@@ -1,0 +1,383 @@
+<!--Assignment 04 - Front End Development-->
+<!--Reference: Maynooth Moodle-->
+<!--Work in IE, Chrome and firefox, work in Windows OS.-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    * {font-size: 12px;}    
+    #userDetail {width: 700px; margin: 20px auto auto auto;}
+    #userList  {width: 1250px; margin: 20px auto auto auto; border-collapse: collapse;}
+    #userList td {border: 1px solid black; padding-left: 3px;}
+    #userList tr:first-child {background-color:#f2f2f2; text-align: center;padding-left: 0px;}
+    input {padding: 0px; width:120px}
+    input.address {width: 250px}
+    select {padding: 0px; width:124px}
+    td {white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+//Retrive users data
+function getUsersData() {
+    var user = {
+        firstname: $('input[name=firstname]').val(),
+        surname: $('input[name=surname]').val(),       
+    };
+    $.ajax({
+        type: 'GET',
+        url: 'http://localhost:9000/api/user?' + "firstname=" 
+            + user.firstname + "&surname=" + user.surname,
+    })
+    .done(function (data) {
+        var table = document.querySelector("#userList");
+        while (table.rows.length > 1) {
+            table.deleteRow(1);
+        }
+        for (var row in data) {    
+            var tr = document.createElement("tr");
+            var td = document.createElement("td");
+            var a = document.createElement("a");
+            a.textContent = "Delete Address";
+            a.href = "javascript:;"; 
+            td.style.textAlign = "center";
+            (function(rowval) {
+                a.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    deleteAddress(data[rowval]["id"]);
+                });
+            })(row); 
+            td.appendChild(a);
+            tr.appendChild(td);
+            var td = document.createElement("td");
+            var a = document.createElement("a");
+            a.textContent = "Edit Personal Info";
+            a.href = "javascript:;"; 
+            td.style.textAlign = "center";
+            (function(rowval) {
+                a.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    updatePersonalInfo(data[rowval]);
+                });
+            })(row); 
+            td.appendChild(a);
+            tr.appendChild(td);
+            for (var key in data[row]) {
+                var td = document.createElement("td");
+                td.textContent = data[row][key]; 
+                tr.appendChild(td);      
+            }            
+            document.querySelector("#userList").appendChild(tr);    
+        }
+    });
+}
+
+function updatePersonalInfo(user) {
+    const validatedTitles = ['Mx', 'Ms', 'Mr', 'Mrs', 'Miss', 'Dr', 'Other'];
+    if (!validatedTitles.includes(user.title)) {
+        $("#title").val("Other");
+        $("#othertitle").removeAttr("disabled").val(user.title);
+    } else {
+        $("#title").val(user.title);
+    }
+    $("#userId").val(user.UserId);
+    $("#firstname").val(user.firstname);
+    $("#surname").val(user.surname);
+    $("#mobile").val(user.mobile);
+    $("#email").val(user.email);
+    $("#isshipaddress").attr("disabled","disabled");
+    $("#address1").attr("disabled","disabled");
+    $("#address2").attr("disabled","disabled");
+    $("#eircode").attr("disabled","disabled");
+    $("#town").attr("disabled","disabled");
+    $("#countryorcity").attr("disabled","disabled");
+    $("#btnAddUser").hide();
+    $("#btnAddAddress").hide();
+    $("#btnUpdateUser").show();
+}
+
+function deleteAddress(addressId) {
+    if(confirm("Do you want to delete the address?")) {
+        $.ajax({
+            type: 'POST',
+            url: 'http://localhost:9000/api/deleteaddress',
+            data: {"addressid": addressId}
+        })
+        .done(function (data) {
+            getUsersData();
+        });
+    }
+    e.preventDefault();
+}
+
+$(document).ready(function () {
+
+    //Load all users data when refreshing the page.
+    getUsersData();
+
+    $("#btnSearch").click(function(){
+        getUsersData();
+    });
+
+    $("#btnUpdateUser").click(function(){
+        var user = {
+            title: $('select[name=title]').val() === "Other" ? 
+                $('input[name=othertitle]').val() : $('select[name=title]').val(),
+            firstname: $('input[name=firstname]').val(),
+            surname: $('input[name=surname]').val(),            
+            mobile: $('input[name=mobile]').val(),
+            email: $('input[name=email]').val(),
+            userid: $('input[name=userId]').val(),       
+        };
+        $.ajax({
+            type: 'POST',
+            url: 'http://localhost:9000/api/updateuser',
+            data: user
+        })
+        .done(function (data) {
+            alert("Updated successfully!");
+            $("#btnAddUser").show();
+            $("#btnAddAddress").show();
+            $("#btnUpdateUser").hide();
+            $('select[name=title]').val('');
+            $('input[name=othertitle]').val('');
+            $('select[name=isshipaddress]').val('-1');
+            $('input[name=firstname]').val('');
+            $('input[name=surname]').val('');
+            $('input[name=mobile]').val('');
+            $('input[name=email]').val('');
+            $('input[name=address1]').val('');
+            $('input[name=address2]').val('');
+            $('input[name=town]').val('');
+            $('input[name=countryorcity]').val('');
+            $('input[name=eircode]').val('');  
+            $("#isshipaddress").removeAttr("disabled");
+            $("#address1").removeAttr("disabled");
+            $("#address2").removeAttr("disabled");
+            $("#eircode").removeAttr("disabled");
+            $("#town").removeAttr("disabled");
+            $("#countryorcity").removeAttr("disabled");
+            getUsersData();
+        });
+        e.preventDefault();
+    });
+    
+    $('#addUserForm').submit(function (e) {        
+        var user = {
+            title: $('select[name=title]').val() === "Other" ? 
+                $('input[name=othertitle]').val() : $('select[name=title]').val(),
+            firstname: $('input[name=firstname]').val(),
+            surname: $('input[name=surname]').val(),            
+            mobile: $('input[name=mobile]').val(),
+            email: $('input[name=email]').val(),
+            isshipaddress: [],
+            address1: [],
+            address2: [],
+            town: [],
+            countryorcity: [],
+            eircode: [],        
+        };
+        $('select[name=isshipaddress]').each(function(){
+            user.isshipaddress.push($(this).val());
+        });
+        $('input[name=address1]').each(function(){
+            user.address1.push($(this).val());
+        });
+        $('input[name=address2]').each(function(){
+            user.address2.push($(this).val());
+        });
+        $('input[name=town]').each(function(){
+            user.town.push($(this).val());
+        });
+        $('input[name=countryorcity]').each(function(){
+            user.countryorcity.push($(this).val());
+        });
+        $('input[name=eircode]').each(function(){
+            user.eircode.push($(this).val());
+        });
+        $.ajax({
+            type: 'POST',
+            url: 'http://localhost:9000/api/user',
+            data: user
+        })
+        .done(function (data) {
+            $('select[name=title]').val('');
+            $('input[name=othertitle]').val('');
+            $('select[name=isshipaddress]').val('-1');
+            $('input[name=firstname]').val('');
+            $('input[name=surname]').val('');
+            $('input[name=mobile]').val('');
+            $('input[name=email]').val('');
+            $('input[name=address1]').val('');
+            $('input[name=address2]').val('');
+            $('input[name=town]').val('');
+            $('input[name=countryorcity]').val('');
+            $('input[name=eircode]').val('');  
+            alert("Added successfully!");
+            getUsersData();
+            var table = document.querySelector("#userDetail");
+            while (table.rows.length > 6) {
+                table.deleteRow(table.rows.length-1);
+            }
+        });
+        e.preventDefault();
+    });
+    
+    $("#title").change(function(){
+        if ($(this).val() !== "Other") {
+            $("#othertitle").attr("disabled","disabled");
+        } else {
+            $("#othertitle").removeAttr("disabled");
+            $("#othertitle").val("");
+        }
+    });
+
+    $("#btnAddAddress").click(function() {        
+        var table = document.querySelector("#userDetail");
+        var tr = "";
+        var td = "";
+        var input = "";
+        tr = document.createElement("tr");
+        //blank td
+        tr.appendChild(document.createElement("td"));
+        tr.appendChild(document.createElement("td"));
+        //Is Shipping Address Title
+        td = document.createElement("td")
+        td.textContent = "Is Shipping Address:";
+        tr.appendChild(td);
+        //Is Shipping Address
+        td = document.createElement("td")
+        var shipselect = document.createElement("select");
+        shipselect.name = "isshipaddress";
+        var shipoption = document.createElement("option");
+        shipoption.value = "-1";
+        shipoption.textContent = "--Please Select--";
+        shipselect.appendChild(shipoption);
+        shipoption = document.createElement("option");
+        shipoption.value = "1";
+        shipoption.textContent = "Yes";
+        shipselect.appendChild(shipoption);
+        shipoption = document.createElement("option");
+        shipoption.value = "0";
+        shipoption.textContent = "No";
+        shipselect.appendChild(shipoption);
+        td.appendChild(shipselect);
+        tr.appendChild(td);
+        table.appendChild(tr);
+
+        for (var i = 1; i <= 2 ; i++) {
+            //blank td
+            tr = document.createElement("tr");        
+            tr.appendChild(document.createElement("td"));
+            tr.appendChild(document.createElement("td"));
+            //Address Title
+            td = document.createElement("td")
+            td.textContent = "Address " + i + ":";
+            tr.appendChild(td);
+            //Address
+            td = document.createElement("td");
+            input = document.createElement("input");
+            input.className = "address";
+            input.value = "";
+            input.name = "address" + i;
+            td.appendChild(input);
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
+
+        for (var i = 1; i <= 3 ; i++) {
+            //blank td
+            tr = document.createElement("tr");
+            tr.appendChild(document.createElement("td"));
+            tr.appendChild(document.createElement("td"));
+            td = document.createElement("td");
+            //Title
+            if (i == 1) {
+                td.textContent = "Town:";
+            } else if(i == 2) {
+                td.textContent = "Country / City:";
+            } else if(i == 3) {
+                td.textContent = "Eircode:";
+            } 
+            tr.appendChild(td);
+            //Town
+            td = document.createElement("td")
+            input = document.createElement("input");
+            input.value = "";
+            if (i == 1) {
+                input.name = "town";
+            } else if(i == 2) {
+                input.name = "countryorcity";
+            } else if(i == 3) {
+                input.name = "eircode";
+            } 
+            td.appendChild(input);
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
+
+    });
+
+});
+</script>
+</head>
+<body>
+<form id="addUserForm">
+<table id="userDetail">
+    <tr><td>Title:<input id="userId" name="userId" type="hidden"></td><td>
+    <select id="title" name="title">
+        <option value="">--Plese Select--</option>
+        <option value="Mx">Mx</option>
+        <option value="Ms">Ms</option>
+        <option value="Mr">Mr</option>
+        <option value="Mrs">Mrs</option>
+        <option value="Miss">Miss</option>
+        <option value="Dr">Dr</option>
+        <option value="Other">Other</option>
+    </select>
+    </td><td>Is Shipping Address:</td><td>
+    <select id="isshipaddress" name="isshipaddress">
+        <option value="-1">--Please Select--</option>
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+    </select>
+    </td></tr>
+    <tr><td></td><td><input id="othertitle" name="othertitle" disabled="disabled"/></td>
+    <td>Address 1:</td><td><input id="address1" name="address1" placeholder=" Address 1" class="address"></td>
+    <tr><td>Firstname:</td><td><input id="firstname" name="firstname" placeholder="First Name"></td>        
+    <td>Address 2:</td><td><input id="address2" name="address2" placeholder=" Address 2" class="address"></td>
+    <tr><td>Surname:</td><td><input id="surname" name="surname" placeholder="Surname"></td>
+    <td>Town:</td><td><input id="town" name="town" placeholder="Town"></td>
+    <tr><td>Mobile:</td><td><input id="mobile" name="mobile" placeholder="Mobile"></td>
+    <td>Country / City:</td><td><input id="countryorcity" name="countryorcity" placeholder="Country / City"></td>
+    </tr><tr><td>Email:</td><td><input id="email" name="email" placeholder="Email" style="width:160px"></td>
+    <td>Eircode:</td><td><input id="eircode" name="eircode" placeholder="Eircode">
+    <a href="javascript:;" id="btnAddAddress" style="margin-left: 10px;">Add More Address</a>
+    </td>
+    </tr>
+</table>
+<br/>
+<div style="text-align: center;">
+    <input type="submit" id="btnAddUser" value="Create User" style="width: 80px;">
+    <input type="button" id="btnUpdateUser" value="Update User" style="width: 80px; display:none;">
+    &nbsp;&nbsp;<input type="button" id="btnSearch" value="Search Users By Name" style="width: 140px;">
+</div>
+</form>
+<div style="margin:0 0 0 30px; overflow-x: scroll; width: 1150px;">
+<table id="userList">
+    <tr>
+        <td style="width:95px">Delete Address</td>
+        <td style="width:106px">Edit Personal Info</td>
+        <td style="width:50px">User ID</td><td style="width:50px">Address ID</td>
+        <td style="width:50px">Title</td>
+        <td style="width:90px">Firstname</td><td style="width:90px">Surname</td>
+        <td style="width:120px">Address 1</td><td style="width:120px">Address 2</td>
+        <td style="width:90px">Eircode</td><td style="width:90px">Town</td>
+        <td style="width:90px">Country / City</td>
+        <td style="width:130px">Mobile</td><td>Email</td>
+    </tr>    
+</table>
+</div>
+</body>
