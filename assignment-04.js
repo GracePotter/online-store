@@ -11,8 +11,11 @@ var server = http.createServer(); // create the server
 
 //Create and connect MySQL
 var	mysql =	require('mysql');
-var	con	= mysql.createConnection({
-	// Database connection information
+var con = mysql.createConnection({
+	host: HOST,       // Database host
+	user: USER,       // Database user
+	password: PASSWORD, // Database password
+	database: DATABASE // Database name
 });
 con.connect(function(err){
 	if (err) throw err;
